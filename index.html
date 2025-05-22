@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Real News App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(to right, #e0f7fa, #e1f5fe);
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .app-container {
+      background-color: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.1);
+      max-width: 960px;
+      width: 100%;
+      overflow: hidden;
+      animation: fadeIn 1s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .header {
+      background: linear-gradient(to right, #0d47a1, #1976d2);
+      color: white;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      padding: 20px;
+      justify-content: center;
+      background-color: #f0f8ff;
+    }
+
+    .controls input, .controls select {
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    button {
+      background: linear-gradient(to right, #1e88e5, #42a5f5);
+      color: white;
+      padding: 14px 24px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      margin: 20px auto;
+      display: block;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: linear-gradient(to right, #1565c0, #1e88e5);
+    }
+
+    .box {
+      margin: 20px;
+      border-radius: 16px;
+      padding: 20px;
+      color: #fff;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .news-box {
+      background: linear-gradient(to right, #2196f3, #64b5f6);
+    }
+
+    .notif-box {
+      background: linear-gradient(to right, #ffb300, #ffe082);
+      color: #333;
+    }
+
+    h3 {
+      margin-top: 0;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    li {
+      margin-bottom: 10px;
+    }
+
+    a {
+      color: #fff;
+      text-decoration: underline;
+    }
+
+    .notif-box a {
+      color: #0d47a1;
+    }
+
+    #notification {
+      font-size: 16px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <div class="header">
+      <h1><span class="material-icons">public</span> Real News App</h1>
+    </div>
+
+    <div class="controls">
+      <input type="text" id="searchInput" placeholder="Search topic (e.g. AI, Olympics)" />
+      <select id="categorySelect">
+        <option value="">All Categories</option>
+        <option value="business">Business</option>
+        <option value="entertainment">Entertainment</option>
+        <option value="health">Health</option>
+        <option value="science">Science</option>
+        <option value="sports">Sports</option>
+        <option value="technology">Technology</option>
+      </select>
+    </div>
+
+    <button id="fetchNewsBtn">📰 Fetch Latest News</button>
+
+    <div class="box news-box">
+      <h3><span class="material-icons">article</span> Top Headlines</h3>
+      <ul id="newsFeed"></ul>
+    </div>
+
+    <div class="box notif-box">
+      <h3><span class="material-icons">notifications</span> Notification Center</h3>
+      <div id="notification">No updates yet. Click the button above.</div>
+    </div>
+  </div>
+
+  <script>
+    class EventBus {
+      constructor() {
+        this.listeners = {};
+      }
+
+      on(event, callback) {
+        if (!this.listeners[event]) {
+          this.listeners[event] = [];
+        }
+        this.listeners[event].push(callback);
+      }
+
+      emit(event, data) {
+        if (this.listeners[event]) {
+          this.listeners[event].forEach(cb => cb(data));
+        }
+      }
+    }
+
+    const notificationCenter = new EventBus();
+
+    notificationCenter.on("newsFetched", (news) => {
+      const feed = document.getElementById("newsFeed");
+      feed.innerHTML = "";
+      news.articles.slice(0, 5).forEach(article => {
+        const item = document.createElement("li");
+        item.innerHTML = `<a href="${article.url}" target="_blank">${article.title}</a>`;
+        feed.appendChild(item);
+      });
+    });
+
+    notificationCenter.on("newsFetched", (news) => {
+      const notification = document.getElementById("notification");
+      if (news.articles.length > 0) {
+        notification.innerHTML = `Latest: <a href="${news.articles[0].url}" target="_blank">${news.articles[0].title}</a>`;
+      } else {
+        notification.innerText = "No news articles found.";
+      }
+    });
+
+    document.getElementById("fetchNewsBtn").addEventListener("click", () => {
+      const API_KEY = "4a91c060a7184dcbacca84859e69b3b1"; 
+      const query = document.getElementById("searchInput").value.trim();
+      const category = document.getElementById("categorySelect").value;
+      let url = "";
+
+      if (query !== "") {
+        url = `https://newsapi.org/v2/everything?q=${encodeURIComponent(query)}&language=en&pageSize=10&apiKey=${API_KEY}`;
+      } else {
+        url = `https://newsapi.org/v2/top-headlines?country=us&pageSize=10&apiKey=${API_KEY}`;
+        if (category) {
+          url += `&category=${category}`;
+        }
+      }
+
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === "ok") {
+            notificationCenter.emit("newsFetched", data);
+          } else {
+            alert("Failed to fetch news: " + data.message);
+          }
+        })
+        .catch(err => {
+          console.error("Error:", err);
+          alert("Error fetching news.");
+        });
+    });
+  </script>
+
+</body>
+</html>
